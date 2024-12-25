@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <title> Chatting </title>
+        <script src = "./static/javascript/vue3.js"></script>
+        <script src = "./static/javascript/bootstrap4.js"></script>
+        <!-- <script src = "/socket.io/socket.io.js"></script> -->
+        <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" integrity="sha384-2huaZvOR9iDzHqslqwpR87isEmrfxqyWOF7hr7BY6KG0+hVKLoEXMPUJw3ynWuhO" crossorigin="anonymous"></script>
+        <link rel = "stylesheet" href = "./static/css/chatting.css" >
+        <link rel = "stylesheet" href = "./static/css/bootstrap5.css" >
+    </head>
+
+    <body>
+        <div id = "chatting_vue" class = "content">
+            <div id = "left_content" class = "left_content">
+                <div class = "room-title-div" >
+                    <label class = "room-title">Room List</label>
+                    <button type="button" class="btn add-user-btn" data-bs-toggle="modal" data-bs-target="#exampleModal">
+                       <img src = "./static/img/user.png" style = "width:40px">
+                    </button>
+                    <!-- <button type="button" class="btn btn-primary" id="liveToastBtn">Show live toast</button> -->
+
+                    <!-- Modal -->
+                    <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                          <div class="modal-content">
+                            <div class="modal-header">
+                              <h5 class="modal-title" id="exampleModalLabel"> 新增聊天室 </h5>
+                              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" id = "invite_modal_close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <label> 輸入ID </label>
+                                <input style = "width:150px; border-radius:5px; height:40px ;margin-left:20px;" id = "invited_id"> 
+                                <div id = "reject-alert" style = "display:none; color: red;" >
+                                    已被拒絕邀請！！
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"> Cancle </button>
+                              <button type="button" class="btn btn-primary" v-on:click = "create_chatting_room()"> Submit </button>
+                            </div>
+                          </div>
+                        </div>
+                    </div>
+
+                </div>
+                <div class = "room-list">
+                    <div class = "room-item" type = "button" v-for = "item in room_list" v-on:click = "select_room(item.room_id, item.room_name)">
+                        <label class = "room-label" >
+                            %% item.room_name %%
+                        </label>
+                    </div>
+                </div>
+
+            </div>
+
+            <div id = "right_content" class = "right_content">
+                
+                <div class  = "select-chatting-room-icon" v-show = "selected_room_name == '' " >
+                    <p class = "select-chatting-room-label" > Choose one chatting room</p>
+                    <img src = "./static/img/choose.png">
+                </div>
+                
+                <div style ="width:100%;height:100%;" v-show = "selected_room_name != '' ">
+                    <div class = "chatting-content" >
+
+                        <div class = "chatting-content-head">
+                            <label class = "select-room-label"> %% selected_room_name %% </label>
+                            <button class = "close-chatting-room-btn" type = "button" v-on:click = "close_room()">
+                                <img src = "./static/img/close.png" style = "width: 20px;">
+                            </button>
+                        </div>
+
+                        <div class = "chatting-record" id = "chatting-record">
+
+                            <div v-for = "message in message_list" v-if = "message_list.length > 0 ">
+                                
+                                    <div class = "sort-left" v-show = 'message.post_people != username && message.room_id == selected_room_id'>
+                                        <div class = "message-box" style = "position: relative;">
+                                            <p class = "message-box-name"> %% message.post_people %%</p>
+                                            <p class = "message-box-message">%% message.message %%</p>
+                                            <p class = "message-box-time" >%% message.time %%</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class = "sort-right" v-show = 'message.post_people == username && message.room_id == selected_room_id'>
+                                        <div class = "message-box" style = "position: relative;"> 
+                                            <!-- <p class = "message-box-name">%% message.name %%</p> -->
+                                            <p class = "message-box-name"> 本人 </p>
+                                            <p class = "message-box-message">%% message.message %%</p>
+                                            <p class = "message-box-time" >%% message.time %%</p>
+                                        </div>
+                                    </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class = "input-content">
+                        <textarea class = "input-text" v-model = "new_message"></textarea>
+                        <button type = "button" class = "submit-btn" v-on:click = "submit_message()">
+                            <img src = "./static/img/key.png" style="width: 64px;"> 
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+                <div id="liveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true"  >
+                    <div class="toast-body">
+                        <p id = "invite_information"> %%to_invite_name%% 邀請您聊天～ </p>  
+                        <div class="mt-2 pt-2 border-top" style = "display: flex; justify-content: space-around;">
+                          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="toast" v-on:click = "response_invite('No')" > No </button>
+                          <button type="button" class="btn btn-primary btn-sm" data-bs-dismiss="toast" v-on:click = "response_invite('Yes')" > Yes </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+              
+
+        </div>
+    </body>
+
+</html>
+
+<script>
+    var socket = io();
+
+    var chat = Vue.createApp({
+        data(){
+            return{
+                room_list:[{"room_id":0, room_name:"Lounge"}],
+                selected_room_name:"",
+                selected_room_id:"",
+                new_message:"",
+                headers:{
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                },
+                message_list:[],
+                temp:"",
+                now_time:"",
+                id:"",
+                username:"",
+                insert_message:{},
+                
+                invite_room_id:-1,
+                to_invite_name:"",
+                to_invite_id:"",
+                test_room_list :null,
+            }
+        },
+        created(){
+            this.get_time()
+            this.get_username()
+        },
+        delimiters:["%%", "%%"],
+        watch:{
+            
+        },
+        methods:{
+            get_username(){
+                
+                fetch("/get_username",{
+                    method:"POST",
+                    headers:this.headers,
+                })
+                .then( response => {
+                    return response.json()
+                })
+                .then( response_json => {
+                    if(response_json.username != ""){
+                        this.username = response_json.username;
+                        this.id = response_json.id;
+                        //this.test_room_list = response_json.activate_room;
+                        socket.emit("get_username", {id:response_json.id, username:response_json.username})
+                    }
+                })
+            },
+
+            select_room(id, item){
+                this.selected_room_id = id;
+                this.selected_room_name = item;
+                // console.log(id, item)
+                //socuket.emit("get_chatting_room", item);
+            },
+
+            get_time(){
+                let local_time = new Date();
+                let year = local_time.getFullYear();
+                let month = local_time.getMonth() + 1;
+                let days = local_time.getDate();
+                let hour = local_time.getHours();
+                let minute = local_time.getMinutes();
+
+                if (days < 10){
+                    days = "0" + days
+                }
+                if (month < 10){
+                    month = "0" + month
+                }
+                
+                if (hour == 24){
+                    hour = 0
+                } 
+                if (hour < 10){
+                    hour = "0" + hour
+                }
+
+                if (minute < 10){
+                    minute = "0" + minute
+                }
+
+                this.now_time = year + "/" + month + "/" + days + " " + hour + ":" + minute
+            },
+
+            submit_message(){
+                if(this.new_message == ""){
+                    return 
+                }
+                else{
+                    this.get_time();
+                    // console.log({room_id:this.selected_room_id, to_room_name:this.selected_room_name, name:this.username,
+                    //     new_message:this.new_message, time:this.now_time})
+                    socket.emit("submit_message", {room_id:this.selected_room_id, to_room_name:this.selected_room_name, name:this.username,
+                                            new_message:this.new_message, time:this.now_time});
+                    this.new_message = "";
+                }
+                
+            },
+
+            close_room(){
+                this.selected_room_name = ""
+            },
+
+            update_scroll_location(){
+                let chatting_record = document.getElementById("chatting-record")
+                chatting_record.scrollTop = chatting_record.scrollHeight;
+            },
+
+            create_chatting_room(){
+                let invited_id = document.getElementById("invited_id")
+                socket.emit("invite", {username:this.username, id:this.id ,invited_id:invited_id.value})
+
+            },
+
+            response_invite(answer){
+                
+                if(answer == "Yes"){
+                    socket.emit("accept_invite", {room_id:this.invite_room_id, invite_id:this.to_invite_id, invited_id:this.id, 
+                            invited_name:this.username})
+                    this.room_list.push({"room_id":this.invite_room_id, "room_name":this.to_invite_name})
+                    
+                }
+                else{
+                    socket.emit("reject_invite", {invite_id:this.to_invite_id})
+                }
+            },
+
+        }
+    }).mount("#chatting_vue")
+
+    socket.on("response", (data) =>{
+        chat.username = data["username"];
+    })
+    
+    socket.on("insert_new_message", (item) =>{  
+        chat.insert_message = item
+        update_message()
+    })
+
+    socket.on("get_username", (item) => {
+        chat.username = item;
+    })
+
+    function await_insert_message(){ 
+        return new Promise((resolve, reject) =>{
+            chat.message_list.push(chat.insert_message);
+            //console.log(chat.insert_message)
+            resolve("insert success")
+        })
+    }
+
+    async function update_message(){
+        let temp = await await_insert_message();
+        chat.update_scroll_location();
+    }
+
+    socket.on("invited_request", (data)=>{
+        
+        var toastLiveExample = document.getElementById('liveToast')
+        var toast = new bootstrap.Toast(toastLiveExample)
+        toast.show()
+
+        chat.invite_room_id = data["room_id"]
+        chat.to_invite_name = data["invite_username"]
+        chat.to_invite_id = data["invite_id"]
+    })
+
+    socket.on("response_accept_invite", (data) =>{
+        chat.room_list.push( { "room_id":data["room_id"], "room_name":data["invited_name"] } )
+        let invite_modal_close = document.getElementById("invite_modal_close")
+        invite_modal_close.click()
+    })
+
+    socket.on("response_reject_invite", ()=>{
+        let reject_alert = document.getElementById("reject-alert")
+        reject_alert.style.display = "block"
+    })
+    
+
+</script>

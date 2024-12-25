@@ -1,0 +1,223 @@
+<html>
+    <head>
+        <!-- <script src = "/socket.io/socket.io.js"></script> -->
+        <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" integrity="sha384-2huaZvOR9iDzHqslqwpR87isEmrfxqyWOF7hr7BY6KG0+hVKLoEXMPUJw3ynWuhO" crossorigin="anonymous"></script>
+        <script src = "./static/javascript/vue3.js"></script>
+        <!-- <link href = "/css/bootstrap5.css" rel="stylesheet" >
+        <script src="/javascript/bootstrap4.js" ></script>
+        <script src="/javascript/bootstrap.bundle.min.js" ></script>
+        <script src="/javascript/popper.min.js" ></script> -->
+        
+        <title> Short Talk </title>
+    </head>
+    
+    <body>
+        <div id = "index_vue" class = "container">
+            <!-- {{username}}
+            <button v-on:click="get_name()">Increment with fetch()</button>
+            <button onclick="incrementWithFetch()">Increment with fetch()</button> --> 
+            
+            <img class = "background-img" src = "./static/img/background.jpg">
+
+            <div class = "login-shadow" id = "login_input_shadow" style="visibility:hidden;">
+                <h1 style="color:rgb(35, 121, 225)">
+                    Short Talk !
+                </h1>
+
+                <div>
+                    <!-- <label class = "login-label" for = "input_name"> Please Input Your Name </label> -->
+                    <!-- <input class = "form-control login-input" type = "text"> -->
+                    <div class = "input-div">
+                        <div>
+                            <label> ID : </label>
+                        </div>
+                        
+                        <input id = "input_name" class = "login-input" type = "text" v-model = "id">
+                    </div>
+                    <div class = "input-div">
+                        <label> USERNAME : </label>
+                        <input id = "input_name" class = "login-input" type = "text" v-model = "username">
+                    </div>
+                </div>
+
+                <button class = "login-btn" v-if = "username != '' " v-on:click = "login()"> Login ! </button>
+                <button class = "login-btn" v-else disabled> Login ! </button>
+            </div>
+    
+        </div>
+        
+    </body>
+</html>
+
+
+<style>
+    html, body{
+        width:100%;
+        height:100%;
+        margin: 0px 0px 0px 0px ; 
+    }
+    .container{
+        width: 100%;
+        height: 100%;
+
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+
+    }
+
+    .background-img{
+        z-index: 0;
+        position: relative;
+        width: 100%;
+        max-height: 100%;
+        filter: blur(1px);
+        /* filter: drop-shadow(16px 16px 10px black) */
+        filter: opacity(50%);
+        /* height: 100%; */
+    }
+
+    .login-shadow{
+        box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+        width: 300px;
+        height: 400px;
+        min-width: 300px;
+        min-height: 400px;
+        border-radius: 10px;
+        z-index: 1;
+        position: absolute;
+        background: white;
+        color: rgb(130, 141, 142);
+        display: flex;
+        flex-direction: column;
+
+        justify-content: space-around;
+        
+        align-items: center;
+
+        opacity:0;
+        transition: visibility 0.5s linear,opacity 0.5s linear;
+        /* -webkit-transition: all 0.5s; */
+    }
+
+    .input-div{
+        display: flex;
+        flex-direction: column;
+        /* align-items: center; */
+        justify-content: center;
+        width: 100%;
+        margin-top: 10px;
+    }
+
+    .login-label{
+        margin-top: 60px;
+        font-size: 26px;
+    }
+
+    .login-input{
+        width: 250px;
+        height: 40px;
+        border-radius: 5px;
+        /* margin-top: 20px; */
+        font-size: 18px;
+        padding-left: 10px;
+
+        border: 2px solid rgb(165, 165, 165);
+    }
+
+    .login-btn{
+        /* margin-top: 100px; */
+        width: 250px;
+        border-radius: 5px;
+        height: 40px;
+        border: none;
+
+        font-size: 22px;
+        font-weight: bold;
+        color: aliceblue;
+        background: rgb(120,120,120);
+    }
+
+    .login-btn:hover{
+        background: rgb(220,220,220);
+        color: rgb(120,120,120);
+    }
+
+</style>
+
+<script>
+    var socket = io({});
+    
+    async function incrementWithFetch() {
+        const response = await fetch("/get_name",{
+            method:"POST"
+        })
+        //httpCount.innerText = await response.text();
+    }
+    
+    var temp = Vue.createApp({
+        data(){
+            return{
+                //socket:io.connect(),
+                username:"",
+                count:0,
+                id:"",
+                headers:{
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                }
+
+            }
+        },
+        created(){
+            this.show_login_shadow()
+        },
+        methods:{
+            show_login_shadow(){
+                function myMessage() {
+                    const login_input_shadow = document.getElementById("login_input_shadow")
+                    login_input_shadow.style.visibility = "visible";
+                    login_input_shadow.style.opacity = "1";
+                }
+                setTimeout(myMessage, 500);
+            },
+
+            login(){
+
+                const body = JSON.stringify({
+                    username:this.username,
+                    id:this.id,
+                })
+                fetch("/login",{
+                    method:"POST",
+                    body:body,
+                    headers:this.headers
+                })
+                .then( response =>{
+                    return response.json()
+                })
+                .then(response_json =>{
+                    console.log(response_json.status);
+                    
+                    console.log(123)
+                    window.location.href = "/chatting"
+                    //window.open("https://www.youtube.com")
+                    
+                })
+                .catch(err =>{
+                    console.log(err)
+                })
+                .finally(
+                    console.log("finish")
+                )
+            },
+        }
+    }).mount("#index_vue")
+
+    // socket.on('user', (data) => {
+    //     console.log(data)
+    //     temp.username = data
+    // })
+
+</script>
