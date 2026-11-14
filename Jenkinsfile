@@ -13,6 +13,10 @@ pipeline {
                     ls -la
                     echo "done" > output/result.txt
                 '''
+                script{
+                    echo "start sub job"
+                }
+                build job: 'Test2'
             }
         }
         stage('結果') {
