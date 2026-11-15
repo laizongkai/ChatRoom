@@ -14,9 +14,9 @@ pipeline {
                     echo "done" > output/result.txt
                 '''
                 script{
-                    echo "start sub job"
+                    echo "start sub job connect wsl system"
                 }
-                build job: 'Test2'
+                build job: 'Test2' 
             }
         }
         stage('結果') {
